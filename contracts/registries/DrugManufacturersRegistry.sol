@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract DrugManufacturersRegistry {
-    // ساختار تولیدکننده دارو
+    // Drug manufacturer structure
     struct Manufacturer {
         uint256 id;
         string name;
@@ -11,56 +11,56 @@ contract DrugManufacturersRegistry {
         address manufacturerAddress;
     }
 
-    // نقشه برای نگهداری اطلاعات تولیدکنندگان
+    // Mapping for storing manufacturer information
     mapping(address => Manufacturer) public manufacturers;
  
-    // شناسه تولیدکننده‌ها
+    // Manufacturer IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت عضویت‌ها
+    // Contract owner for membership management
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام تولیدکننده جدید
+    // Register new manufacturer
     function registerManufacturer(string memory _name, string memory _location) public {
         require(manufacturers[msg.sender].manufacturerAddress == address(0), "Manufacturer already registered");
 
         currentId++;
         
-        // ذخیره اطلاعات تولیدکننده
+        // Store manufacturer information
         manufacturers[msg.sender] = Manufacturer({
             id: currentId,
             name: _name,
             location: _location,
-            isApproved: false,  // در ابتدا عضویت تایید نشده است
+            isApproved: false,  // Initially membership is not approved
             manufacturerAddress: msg.sender
         });
     }
 
-    // تایید عضویت تولیدکننده توسط مالک قرارداد
+    // Approve manufacturer membership by contract owner
     function approveManufacturer(address _manufacturerAddress) public onlyOwner {
         require(manufacturers[_manufacturerAddress].manufacturerAddress != address(0), "Manufacturer not registered");
 
         manufacturers[_manufacturerAddress].isApproved = true;
     }
 
-    // لغو عضویت تولیدکننده توسط مالک قرارداد
+    // Revoke manufacturer membership by contract owner
     function revokeManufacturer(address _manufacturerAddress) public onlyOwner {
         require(manufacturers[_manufacturerAddress].manufacturerAddress != address(0), "Manufacturer not registered");
 
         manufacturers[_manufacturerAddress].isApproved = false;
     }
 
-    // بررسی وضعیت تایید عضویت تولیدکننده
+    // Check manufacturer membership approval status
     function isApprovedManufacturer(address _manufacturerAddress) public view returns (bool) {
         return manufacturers[_manufacturerAddress].isApproved;
     }
