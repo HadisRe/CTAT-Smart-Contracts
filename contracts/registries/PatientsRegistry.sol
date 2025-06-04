@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "./AccessToken.sol"; // اطمینان حاصل کنید که مسیر صحیح فایل AccessToken.sol را تنظیم کرده‌اید
+import "./AccessToken.sol"; // Make sure to set the correct path for AccessToken.sol file
 import "./AccessType.sol";
+
 contract PatientsRegistry {
-    // ساختار بیمار
+    // Patient structure
     struct Patient {
         uint256 id;
         string name;
@@ -17,37 +18,37 @@ contract PatientsRegistry {
         uint256 policyToken;
     }
 
-    // نقشه برای نگهداری اطلاعات بیماران
+    // Mapping for storing patient information
     mapping(address => Patient) public patients;
 
-    // شناسه بیماران
+    // Patient IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت کلی
+    // Contract owner for general management
     address public owner;
 
-    // آدرس قرارداد AccessToken
+    // AccessToken contract address
     AccessToken private accessTokenContract;
 
-    // تنظیم مالک و آدرس قرارداد AccessToken در کانستراکتور
+    // Set owner and AccessToken contract address in constructor
     constructor(address _accessTokenAddress) {
         owner = msg.sender;
         accessTokenContract = AccessToken(_accessTokenAddress);
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام بیمار جدید
+    // Register new patient
     function registerPatient(string memory _name, uint256 _age, string memory _medicalCondition) public {
         require(!patients[msg.sender].isRegistered, "Patient already registered");
 
         currentId++;
         
-        // ذخیره اطلاعات بیمار
+        // Store patient information
         patients[msg.sender] = Patient({
             id: currentId,
             name: _name,
@@ -60,31 +61,31 @@ contract PatientsRegistry {
         });
     }
 
-    // تابعی برای اختصاص توکن دسترسی به بیمار
+    // Function to assign access token to patient
     function assignAccessToken(address _patientAddress, uint256 _accessTokenId) public onlyOwner {
         require(patients[_patientAddress].isRegistered, "Patient not registered");
 
-        // اطمینان از اینکه مالک توکن ERC721 همان مالک قرارداد است
+        // Ensure that the ERC721 token owner is the same as the contract owner
         require(accessTokenContract.ownerOf(_accessTokenId) == msg.sender, "You are not the owner of this access token");
 
-        // تخصیص accessToken به بیمار
+        // Assign accessToken to patient
         patients[_patientAddress].accessToken = _accessTokenId;
     }
 
-    // تابعی برای به‌روزرسانی وضعیت پزشکی بیمار (تنها بیمار قادر به بروزرسانی است)
+    // Function to update patient's medical condition (only patient can update)
     function updateMedicalCondition(string memory _newCondition) public {
         require(patients[msg.sender].isRegistered, "Patient not registered");
         
-        // بروزرسانی وضعیت پزشکی
+        // Update medical condition
         patients[msg.sender].medicalCondition = _newCondition;
     }
 
-    // بررسی وضعیت ثبت‌نام بیمار
+    // Check patient registration status
     function isRegisteredPatient(address _patientAddress) public view returns (bool) {
         return patients[_patientAddress].isRegistered;
     }
 
-    // دسترسی به اطلاعات بیمار (فقط توسط مالک قرارداد)
+    // Access patient information (only by contract owner)
     function getPatientInfo(address _patientAddress) public view onlyOwner returns (string memory, uint256, string memory) {
         require(patients[_patientAddress].isRegistered, "Patient not registered");
 
@@ -92,22 +93,20 @@ contract PatientsRegistry {
         return (patient.name, patient.age, patient.medicalCondition);
     }
 
-
-  // تابعی برای سوزاندن توکن دسترسی در صورت پایان یافتن تاریخ اعتبار
+    // Function to burn access token when expiration date is reached
     function burnExpiredAccessToken(address _patientAddress) public onlyOwner {
         require(patients[_patientAddress].isRegistered, "Patient not registered");
         uint256 accessTokenId = patients[_patientAddress].accessToken;
         require(accessTokenId != 0, "No access token assigned");
 
-        // دریافت اطلاعات دسترسی
+        // Get access information
         AccessToken.Access memory access = accessTokenContract.getAccess(accessTokenId);
         require(block.timestamp > access.endDate, "Access token is not expired yet");
 
-        // سوزاندن توکن با استفاده از انتقال آن به آدرس صفر
+        // Burn token by transferring it to zero address
         accessTokenContract.safeTransferFrom(msg.sender, address(0), accessTokenId);
 
-        // حذف توکن دسترسی از بیمار
+        // Remove access token from patient
         patients[_patientAddress].accessToken = 0;
     }
-
 }
