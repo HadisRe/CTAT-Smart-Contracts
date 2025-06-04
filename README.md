@@ -88,6 +88,3 @@ cat deployments/unknown.json
 - **Insufficient funds**: Each account starts with 100 ETH, should be enough for testing
 - **Nonce too high/low**: Reset MetaMask account or restart Ganache
 
-## Production Notes
-
-⚠️ **Never use Ganache private keys in production!** These are for development only.
