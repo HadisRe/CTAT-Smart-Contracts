@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract DrugDistributorsRegistry {
-    // ساختار توزیع‌کننده دارو
+    // Drug distributor structure
     struct Distributor {
         uint256 id;
         string name;
@@ -11,56 +11,56 @@ contract DrugDistributorsRegistry {
         address distributorAddress;
     }
 
-    // نقشه برای نگهداری اطلاعات توزیع‌کنندگان
+    // Mapping for storing distributor information
     mapping(address => Distributor) public distributors;
 
-    // شناسه توزیع‌کننده‌ها
+    // Distributor IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت عضویت‌ها
+    // Contract owner for membership management
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام توزیع‌کننده جدید
+    // Register new distributor
     function registerDistributor(string memory _name, string memory _location) public {
         require(distributors[msg.sender].distributorAddress == address(0), "Distributor already registered");
 
         currentId++;
         
-        // ذخیره اطلاعات توزیع‌کننده
+        // Store distributor information
         distributors[msg.sender] = Distributor({
             id: currentId,
             name: _name,
             location: _location,
-            isApproved: false,  // در ابتدا عضویت تایید نشده است
+            isApproved: false,  // Initially membership is not approved
             distributorAddress: msg.sender
         });
     }
 
-    // تایید عضویت توزیع‌کننده توسط مالک قرارداد
+    // Approve distributor membership by contract owner
     function approveDistributor(address _distributorAddress) public onlyOwner {
         require(distributors[_distributorAddress].distributorAddress != address(0), "Distributor not registered");
 
         distributors[_distributorAddress].isApproved = true;
     }
 
-    // لغو عضویت توزیع‌کننده توسط مالک قرارداد
+    // Revoke distributor membership by contract owner
     function revokeDistributor(address _distributorAddress) public onlyOwner {
         require(distributors[_distributorAddress].distributorAddress != address(0), "Distributor not registered");
 
         distributors[_distributorAddress].isApproved = false;
     }
 
-    // بررسی وضعیت تایید عضویت توزیع‌کننده
+    // Check distributor membership approval status
     function isApprovedDistributor(address _distributorAddress) public view returns (bool) {
         return distributors[_distributorAddress].isApproved;
     }
