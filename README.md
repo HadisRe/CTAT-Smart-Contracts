@@ -1,7 +1,3 @@
-# CTAT-Smart-Contracts
- A blockchain-based Conditional Traceable Access Token (CTAT) system for enhancing performance and security in pharmaceutical supply chains
-
-
 # Ganache Quick Start Guide
 
 This guide provides quick commands to get your CTAT project running with Ganache.
@@ -72,6 +68,19 @@ When using `--deterministic` flag, Ganache generates the same accounts every tim
 
 And so on...
 
+## Useful Commands
+
+```bash
+# Check if Ganache is running
+curl -X POST -H "Content-Type: application/json" --data '{"jsonrpc":"2.0","method":"eth_accounts","params":[],"id":1}' http://127.0.0.1:7545
+
+# Get network info
+npx hardhat console --network ganache
+
+# View deployed contracts
+cat deployments/unknown.json
+```
+
 ## Troubleshooting
 
 - **Port already in use**: Kill existing Ganache processes or use a different port
@@ -82,5 +91,3 @@ And so on...
 ## Production Notes
 
 ⚠️ **Never use Ganache private keys in production!** These are for development only.
-
- 
