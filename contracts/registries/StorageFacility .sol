@@ -2,35 +2,35 @@
 pragma solidity ^0.8.0;
 
 contract StorageFacilities {
-    // ساختار مرکز انبارداری
+    // Storage center structure
     struct StorageCenter {
         uint256 id;
         string name;
-        string location; // موقعیت مکانی مرکز انبارداری
-        bool isApproved; // وضعیت تایید مرکز
-        address centerAddress; // آدرس مرکز انبارداری
+        string location; // Storage center location
+        bool isApproved; // Center approval status
+        address centerAddress; // Storage center address
     }
 
-    // نقشه برای نگهداری اطلاعات مراکز انبارداری
+    // Mapping for storing storage center information
     mapping(address => StorageCenter) public storageCenters;
 
-    // شناسه مراکز انبارداری
+    // Storage center IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت
+    // Contract owner for management
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
-    // Modifier برای اطمینان از عملیات توسط مالک
+    // Modifier to ensure operations by owner
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام مرکز انبارداری جدید
+    // Register new storage center
     function registerStorageCenter(
         string memory _name,
         string memory _location
@@ -46,12 +46,12 @@ contract StorageFacilities {
             id: currentId,
             name: _name,
             location: _location,
-            isApproved: false, // وضعیت تایید نشده به صورت پیش‌فرض
+            isApproved: false, // Unapproved status by default
             centerAddress: msg.sender
         });
     }
 
-    // تایید مرکز انبارداری
+    // Approve storage center
     function approveStorageCenter(address _centerAddress) public onlyOwner {
         require(
             storageCenters[_centerAddress].centerAddress != address(0),
@@ -61,7 +61,7 @@ contract StorageFacilities {
         storageCenters[_centerAddress].isApproved = true;
     }
 
-    // لغو تایید مرکز انبارداری
+    // Revoke storage center approval
     function revokeStorageCenter(address _centerAddress) public onlyOwner {
         require(
             storageCenters[_centerAddress].centerAddress != address(0),
@@ -71,7 +71,7 @@ contract StorageFacilities {
         storageCenters[_centerAddress].isApproved = false;
     }
 
-    // بررسی وضعیت تایید مرکز انبارداری
+    // Check storage center approval status
     function isApprovedStorageCenter(address _centerAddress)
         public
         view
