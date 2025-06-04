@@ -9,40 +9,40 @@ interface IDrugManufacturersRegistry {
 }
 
 contract CTAToken is ERC721 {
-    // ساختار دارو و اطلاعات مرتبط
+    // Drug structure and related information
     struct Drug {
         uint256 id;
         string name;
         uint256 productionDate;
         uint256 expirationDate;
-        uint256 temperature;  // دمای فعلی دارو
+        uint256 temperature;  // Current drug temperature
         bool isSafe;   
-       // وضعیت سلامت دارو (True = سالم، False = ناسالم)
+        // Drug health status (True = healthy, False = unhealthy)
         address currentHolder;
     }
 
     uint256 private currentDrugId;
     mapping(uint256 => Drug) public drugs;
-// Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-       // مالک قرارداد برای مدیریت عضویت‌ها
+    // Contract owner for membership management
     address public owner;
 
-     
-    // آدرس قرارداد تولیدکنندگان
+    // Manufacturers contract address
     address public manufacturersRegistry;
 
-    // رویدادها
+    // Events
     event DrugTracked(uint256 drugId, string status, uint256 timestamp, uint256 temperature, bool isSafe);
     event AccessGranted(uint256 drugId, address indexed grantedTo);
 
     constructor(address _manufacturersRegistry) ERC721("ConditionalTrackableAccessToken", "CTAT")  {
         manufacturersRegistry = _manufacturersRegistry;
-         owner = msg.sender; // 
+        owner = msg.sender;
     }
 
     modifier onlyApprovedManufacturer() {
@@ -51,7 +51,7 @@ contract CTAToken is ERC721 {
         _;
     }
 
-    // تابع ایجاد توکن دارو و ثبت اطلاعات اولیه آن
+    // Function to create drug token and register its initial information
     function createDrug(
         string memory _name,
         uint256 _productionDate,
@@ -62,7 +62,7 @@ contract CTAToken is ERC721 {
         currentDrugId++;
         uint256 newDrugId = currentDrugId;
 
-        /// _mint(msg.sender, newDrugId);
+        // _mint(msg.sender, newDrugId);
 
         drugs[newDrugId] = Drug({
             id: newDrugId,
@@ -77,19 +77,19 @@ contract CTAToken is ERC721 {
         emit DrugTracked(newDrugId, "Created", block.timestamp, _temperature, _isSafe);
     }
 
-    // انتقال دارو به سازمان دیگر در زنجیره تأمین
+    // Transfer drug to another organization in supply chain
     function transferDrug(uint256 _drugId, address _to) public {
         require(ownerOf(_drugId) == msg.sender, "Only current holder can transfer the drug");
         require(drugs[_drugId].isSafe, "Drug is not safe for transfer");
 
-        // انتقال مالکیت دارو
+        // Transfer drug ownership
         _transfer(msg.sender, _to, _drugId);
         drugs[_drugId].currentHolder = _to;
 
         emit DrugTracked(_drugId, "Transferred", block.timestamp, drugs[_drugId].temperature, drugs[_drugId].isSafe);
     }
 
-    // واکشی و چاپ اطلاعات دارو با استفاده از رویداد
+    // Fetch and print drug information using event
     function fetchDrug(uint256 _drugId) public {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
@@ -97,7 +97,7 @@ contract CTAToken is ERC721 {
         emit DrugTracked(_drugId, "Fetched", block.timestamp, drug.temperature, drug.isSafe);
     }
 
-    // به‌روزرسانی دمای دارو توسط اوراکل یا سیستم IoT
+    // Update drug temperature by oracle or IoT system
     function updateDrugCondition(uint256 _drugId, uint256 _newTemperature, bool _isSafe) public onlyOwner  {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
@@ -108,14 +108,14 @@ contract CTAToken is ERC721 {
         emit DrugTracked(_drugId, "Condition", block.timestamp, _newTemperature, _isSafe);
     }
 
-    // اعطای دسترسی به اطلاعات دارو
+    // Grant access to drug information
     function grantAccess(uint256 _drugId, address _grantedTo) public onlyOwner {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
         emit AccessGranted(_drugId, _grantedTo);
     }
 
-    // تابع چک کردن وجود دارو در استراکت
+    // Function to check drug existence in struct
     function _existsInStruct(uint256 _drugId) internal view returns (bool) {
         return drugs[_drugId].id == _drugId;
     }
