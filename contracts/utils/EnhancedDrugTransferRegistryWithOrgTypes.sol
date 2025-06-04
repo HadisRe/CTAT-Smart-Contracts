@@ -2,10 +2,10 @@
 pragma solidity ^0.8.0;
 
 contract EnhancedDrugTransferRegistryWithOrgTypes {
-    // نوع شمارشی برای انواع سازمان‌ها
+    // Enumeration type for organization types
     enum OrgType { Manufacturer, Distributor, Storage, Pharmacy, Regulatory }
 
-    // ساختار سازمان
+    // Organization structure
     struct Organization {
         uint256 id;
         string name;
@@ -14,7 +14,7 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
         address orgAddress;
     }
 
-    // ساختار انتقال دارو
+    // Drug transfer structure
     struct DrugTransfer {
         uint256 id;
         address sender;
@@ -29,42 +29,42 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
         string status;
     }
 
-    // نقشه برای ثبت انتقال‌های دارو
+    // Mapping for recording drug transfers
     mapping(uint256 => DrugTransfer) public transfers;
 
-    // نقشه برای نگهداری اطلاعات سازمان‌ها
+    // Mapping for storing organization information
     mapping(address => Organization) public organizations;
 
-    // شناسه انتقال‌ها و سازمان‌ها
+    // Transfer and organization IDs
     uint256 private currentTransferId;
     uint256 private currentOrgId;
 
-    // مالک قرارداد
+    // Contract owner
     address public owner;
 
     constructor() {
         owner = msg.sender;
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // Modifier برای اطمینان از اینکه تنها سازمان‌های تاییدشده می‌توانند عملیات‌های خاصی را انجام دهند
+    // Modifier to ensure only approved organizations can perform specific operations
     modifier onlyApprovedOrganization() {
         require(organizations[msg.sender].isApproved, "Only approved organizations can perform this action");
         _;
     }
 
-    // ثبت‌نام سازمان جدید با نوع سازمان
+    // Register new organization with organization type
     function registerOrganization(string memory _name, OrgType _orgType) public {
         require(organizations[msg.sender].orgAddress == address(0), "Organization already registered");
 
         currentOrgId++;
 
-        // ذخیره اطلاعات سازمان
+        // Store organization information
         organizations[msg.sender] = Organization({
             id: currentOrgId,
             name: _name,
@@ -74,21 +74,21 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
         });
     }
 
-    // تایید سازمان توسط مالک قرارداد
+    // Approve organization by contract owner
     function approveOrganization(address _orgAddress) public onlyOwner {
         require(organizations[_orgAddress].orgAddress != address(0), "Organization not registered");
 
         organizations[_orgAddress].isApproved = true;
     }
 
-    // لغو عضویت سازمان توسط مالک قرارداد
+    // Revoke organization membership by contract owner
     function revokeOrganization(address _orgAddress) public onlyOwner {
         require(organizations[_orgAddress].orgAddress != address(0), "Organization not registered");
 
         organizations[_orgAddress].isApproved = false;
     }
 
-    // ثبت انتقال دارو فقط توسط تولیدکنندگان یا توزیع‌کنندگان
+    // Record drug transfer only by manufacturers or distributors
     function recordDrugTransfer(
         address _receiver,
         string memory _drugName,
@@ -109,7 +109,7 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
 
         currentTransferId++;
 
-        // ذخیره اطلاعات انتقال دارو
+        // Store drug transfer information
         transfers[currentTransferId] = DrugTransfer({
             id: currentTransferId,
             sender: msg.sender,
@@ -125,7 +125,7 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
         });
     }
 
-    // به‌روزرسانی وضعیت انتقال دارو و دما توسط سازمان تایید شده
+    // Update drug transfer status and temperature by approved organization
     function updateTransferStatusAndTemperature(uint256 _transferId, string memory _newStatus, uint256 _newTemperature, bool _isSafe) public onlyApprovedOrganization {
         require(_transferId > 0 && _transferId <= currentTransferId, "Invalid transfer ID");
         require(transfers[_transferId].sender == msg.sender, "Only the sender can update the status");
@@ -135,7 +135,7 @@ contract EnhancedDrugTransferRegistryWithOrgTypes {
         transfers[_transferId].isSafe = _isSafe;
     }
 
-    // دسترسی به اطلاعات انتقال دارو با ID انتقال (فقط توسط سازمان‌های تایید شده)
+    // Access drug transfer information by transfer ID (only by approved organizations)
     function getTransferInfo(uint256 _transferId) public view onlyApprovedOrganization returns (
         address sender,
         address receiver,
