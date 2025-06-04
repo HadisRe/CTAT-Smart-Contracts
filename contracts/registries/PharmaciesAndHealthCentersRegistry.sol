@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract PharmaciesAndHealthCentersRegistry {
-    // ساختار داروخانه و مرکز بهداشتی
+    // Pharmacy and health center structure
     struct HealthCenter {
         uint256 id;
         string name;
@@ -11,56 +11,56 @@ contract PharmaciesAndHealthCentersRegistry {
         address centerAddress;
     }
 
-    // نقشه برای نگهداری اطلاعات داروخانه‌ها و مراکز بهداشتی
+    // Mapping for storing pharmacy and health center information
     mapping(address => HealthCenter) public healthCenters;
 
-    // شناسه داروخانه‌ها و مراکز بهداشتی
+    // Pharmacy and health center IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت عضویت‌ها
+    // Contract owner for membership management
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام داروخانه یا مرکز بهداشتی جدید
+    // Register new pharmacy or health center
     function registerHealthCenter(string memory _name, string memory _location) public {
         require(healthCenters[msg.sender].centerAddress == address(0), "Health Center already registered");
 
         currentId++;
         
-        // ذخیره اطلاعات مرکز بهداشتی
+        // Store health center information
         healthCenters[msg.sender] = HealthCenter({
             id: currentId,
             name: _name,
             location: _location,
-            isApproved: false,  // در ابتدا عضویت تایید نشده است
+            isApproved: false,  // Initially membership is not approved
             centerAddress: msg.sender
         });
     }
 
-    // تایید عضویت داروخانه یا مرکز بهداشتی توسط مالک قرارداد
+    // Approve pharmacy or health center membership by contract owner
     function approveHealthCenter(address _centerAddress) public onlyOwner {
         require(healthCenters[_centerAddress].centerAddress != address(0), "Health Center not registered");
 
         healthCenters[_centerAddress].isApproved = true;
     }
 
-    // لغو عضویت داروخانه یا مرکز بهداشتی توسط مالک قرارداد
+    // Revoke pharmacy or health center membership by contract owner
     function revokeHealthCenter(address _centerAddress) public onlyOwner {
         require(healthCenters[_centerAddress].centerAddress != address(0), "Health Center not registered");
 
         healthCenters[_centerAddress].isApproved = false;
     }
 
-    // بررسی وضعیت تایید عضویت داروخانه یا مرکز بهداشتی
+    // Check pharmacy or health center membership approval status
     function isApprovedHealthCenter(address _centerAddress) public view returns (bool) {
         return healthCenters[_centerAddress].isApproved;
     }
