@@ -1,7 +1,6 @@
-
 pragma solidity ^0.8.0;
 
-import "./CTAT.sol";
+import "./CTATDrugManufacturers.sol";
 
 contract SupplyChainAccessControl is CTAToken{
 
@@ -10,9 +9,7 @@ contract SupplyChainAccessControl is CTAToken{
     mapping(address => Role) public userRoles;
     mapping(address => bool) public emergencyAccess;
     
-    
-  
-// نگهداری توکن‌های اضطراری
+    // Emergency token storage
     uint256 public emergencyTokenCounter;
     mapping(address => uint256) public emergencyTokens;
 
@@ -22,8 +19,6 @@ contract SupplyChainAccessControl is CTAToken{
     }
    
     uint256 public currentDrugId;
-  
-
     
     modifier checkTemperature(uint drugId) {
         require(drugs[drugId].temperature <= 25, "Temperature out of range");
@@ -43,19 +38,17 @@ contract SupplyChainAccessControl is CTAToken{
         userRoles[user] = role;
     }
 
+    function checkDrugConditions(uint drugId) public view {
+        require(drugs[drugId].temperature >= 2 && drugs[drugId].temperature <= 25, "Temperature out of range");
+        require(block.timestamp <= drugs[drugId].expirationDate, "Drug has expired");
+        require(drugs[drugId].humidity <= 60, "Humidity out of range");
+        require(keccak256(abi.encodePacked(drugs[drugId].status)) == keccak256(abi.encodePacked("normal")), "Drug status is not normal");
+        require(block.timestamp - drugs[drugId].lastDeliveredAt <= 7 days, "Drug delivery too old");
+        require(drugs[drugId].isSafe, "Drug is not safe for use");
+        require(drugs[drugId].currentHolder == msg.sender, "You are not the current holder of the drug");
+    }
 
-function checkDrugConditions(uint drugId) public view {
-    require(drugs[drugId].temperature >= 2 && drugs[drugId].temperature <= 25, "Temperature out of range");
-    require(block.timestamp <= drugs[drugId].expirationDate, "Drug has expired");
-    require(drugs[drugId].humidity <= 60, "Humidity out of range");
-    require(keccak256(abi.encodePacked(drugs[drugId].status)) == keccak256(abi.encodePacked("normal")), "Drug status is not normal");
-    require(block.timestamp - drugs[drugId].lastDeliveredAt <= 7 days, "Drug delivery too old");
-    require(drugs[drugId].isSafe, "Drug is not safe for use");
-    require(drugs[drugId].currentHolder == msg.sender, "You are not the current holder of the drug");
-}
-
- 
-    // تابع ایجاد توکن دارو و ثبت اطلاعات اولیه آن
+    // Function to create drug token and register its initial information
     function registerDrug(
         string memory _name,
         uint256 _productionDate,
@@ -82,54 +75,48 @@ function checkDrugConditions(uint drugId) public view {
             currentHolder: msg.sender
         });
     }
- 
 
     function viewDrug(uint drugId) public view returns (string memory, uint256, uint256, string memory) {
         return (drugs[drugId].name, drugs[drugId].temperature, drugs[drugId].humidity, drugs[drugId].status);
     }
 
-
-
-   
-
     function activateEmergencyAccess(uint drugId) public onlyRole(Role.Distributor) {
         require(drugs[drugId].temperature > 25, "Emergency access only when temperature is out of range");
         
-        // فعال‌سازی دسترسی اضطراری
+        // Activate emergency access
         emergencyAccess[msg.sender] = true;
 
-        // تعریف و اختصاص یک توکن جدید
+        // Define and assign a new token
         emergencyTokenCounter++;
         uint256 newToken = emergencyTokenCounter;
 
-        // ذخیره توکن برای کاربر
+        // Store token for user
         emergencyTokens[msg.sender] = newToken;
 
-        // اعلام وضعیت اضطراری برای دارو
+        // Declare emergency status for drug
         drugs[drugId].status = "out of range";
     }
 
-    // تابع مشاهده توکن اضطراری
+    // Function to view emergency token
     function viewEmergencyToken() public view returns (uint256) {
         require(emergencyAccess[msg.sender], "You do not have emergency access");
         return emergencyTokens[msg.sender];
     }
 
- 
     function restrictAccess(uint drugId) public onlyRole(Role.Pharmacy) checkTemperature(drugId) {
         drugs[drugId].status = "checked";
     }
 
-    // شرط خاص برای توزیعکننده که دسترسی موقتی دارد
+    // Special condition for distributor with temporary access
     function updateDeliveryStatus(uint drugId) public onlyRole(Role.Distributor) {
         require(block.timestamp > drugs[drugId].lastDeliveredAt, "Already delivered to Pharmacy");
         drugs[drugId].lastDeliveredAt = block.timestamp;
     }
     
-    // سیاست محدودیت دسترسی پس از تحویل دارو به داروخانه
+    // Access restriction policy after drug delivery to pharmacy
     function restrictAfterDelivery(uint drugId) public {
         if(block.timestamp > drugs[drugId].lastDeliveredAt) {
-            userRoles[msg.sender] = Role.Pharmacy; // محدودیت دسترسی برای توزیعکننده
+            userRoles[msg.sender] = Role.Pharmacy; // Access restriction for distributor
         }
     }
 }
