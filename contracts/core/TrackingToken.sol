@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract DrugTracking {
-    // ساختار دارو و اطلاعات مرتبط
+    // Drug structure and related information
     struct Drug {
         uint256 id;
         string name;
@@ -10,7 +10,7 @@ contract DrugTracking {
         uint256 expirationDate;
         uint256 humidity;
         string status;  // "normal", "out of range"
-        uint256 lastDeliveredAt; // زمان تحویل دارو
+        uint256 lastDeliveredAt; // Drug delivery time
         uint256 temperature;
         bool isSafe;
         address currentHolder;
@@ -19,15 +19,15 @@ contract DrugTracking {
     uint256 private currentDrugId;
     mapping(uint256 => Drug) public drugs;
 
-    // رویدادها
+    // Events
     event DrugTracked(uint256 drugId, string status, uint256 timestamp, uint256 temperature, bool isSafe);
     event AccessGranted(uint256 drugId, address indexed grantedTo);
 
-    // مالک قرارداد
+    // Contract owner
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
     modifier onlyOwner() {
@@ -35,7 +35,7 @@ contract DrugTracking {
         _;
     }
 
-    // تابع ایجاد اطلاعات دارو
+    // Function to create drug information
     function createDrug(
         string memory _name,
         uint256 _productionDate,
@@ -65,7 +65,7 @@ contract DrugTracking {
         emit DrugTracked(newDrugId, "Created", block.timestamp, _temperature, _isSafe);
     }
 
-    // دریافت اطلاعات دارو
+    // Get drug information
     function fetchDrug(uint256 _drugId) public {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
@@ -73,7 +73,7 @@ contract DrugTracking {
         emit DrugTracked(_drugId, "Fetched", block.timestamp, drug.temperature, drug.isSafe);
     }
 
-    // به‌روزرسانی شرایط دارو
+    // Update drug conditions
     function updateDrugCondition(uint256 _drugId, uint256 _newTemperature, bool _isSafe) public onlyOwner {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
@@ -84,14 +84,14 @@ contract DrugTracking {
         emit DrugTracked(_drugId, "Condition Updated", block.timestamp, _newTemperature, _isSafe);
     }
 
-    // اعطای دسترسی به اطلاعات دارو
+    // Grant access to drug information
     function grantAccess(uint256 _drugId, address _grantedTo) public onlyOwner {
         require(_existsInStruct(_drugId), "Drug does not exist");
 
         emit AccessGranted(_drugId, _grantedTo);
     }
 
-    // بررسی وجود دارو در استراکت
+    // Check drug existence in struct
     function _existsInStruct(uint256 _drugId) internal view returns (bool) {
         return drugs[_drugId].id == _drugId;
     }
