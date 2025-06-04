@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 contract RegulatoryAuthoritiesRegistry {
-    // ساختار نهاد نظارتی
+    // Regulatory authority structure
     struct Authority {
         uint256 id;
         string name;
@@ -11,61 +11,61 @@ contract RegulatoryAuthoritiesRegistry {
         address authorityAddress;
     }
 
-    // نقشه برای نگهداری اطلاعات نهادهای نظارتی
+    // Mapping for storing regulatory authority information
     mapping(address => Authority) public authorities;
 
-    // شناسه نهادها
+    // Authority IDs
     uint256 private currentId;
 
-    // مالک قرارداد برای مدیریت عضویت‌ها
+    // Contract owner for membership management
     address public owner;
 
     constructor() {
-        owner = msg.sender; // تنظیم مالک قرارداد
+        owner = msg.sender; // Set contract owner
     }
 
-    // Modifier برای اطمینان از اینکه تنها مالک می‌تواند عملیات‌های خاصی را انجام دهد
+    // Modifier to ensure only owner can perform specific operations
     modifier onlyOwner() {
         require(msg.sender == owner, "Only the owner can perform this action");
         _;
     }
 
-    // ثبت‌نام نهاد نظارتی جدید
+    // Register new regulatory authority
     function registerAuthority(string memory _name, string memory _jurisdiction) public {
         require(authorities[msg.sender].authorityAddress == address(0), "Authority already registered");
 
         currentId++;
         
-        // ذخیره اطلاعات نهاد نظارتی
+        // Store regulatory authority information
         authorities[msg.sender] = Authority({
             id: currentId,
             name: _name,
             jurisdiction: _jurisdiction,
-            isApproved: false,  // در ابتدا عضویت تایید نشده است
+            isApproved: false,  // Initially membership is not approved
             authorityAddress: msg.sender
         });
     }
 
-    // تایید عضویت نهاد نظارتی توسط مالک قرارداد
+    // Approve regulatory authority membership by contract owner
     function approveAuthority(address _authorityAddress) public onlyOwner {
         require(authorities[_authorityAddress].authorityAddress != address(0), "Authority not registered");
 
         authorities[_authorityAddress].isApproved = true;
     }
 
-    // لغو عضویت نهاد نظارتی توسط مالک قرارداد
+    // Revoke regulatory authority membership by contract owner
     function revokeAuthority(address _authorityAddress) public onlyOwner {
         require(authorities[_authorityAddress].authorityAddress != address(0), "Authority not registered");
 
         authorities[_authorityAddress].isApproved = false;
     }
 
-    // بررسی وضعیت تایید عضویت نهاد نظارتی
+    // Check regulatory authority membership approval status
     function isApprovedAuthority(address _authorityAddress) public view returns (bool) {
         return authorities[_authorityAddress].isApproved;
     }
 
-    // دسترسی به اطلاعات نهاد نظارتی (فقط توسط مالک قرارداد)
+    // Access regulatory authority information (only by contract owner)
     function getAuthorityInfo(address _authorityAddress) public view onlyOwner returns (string memory, string memory, bool) {
         require(authorities[_authorityAddress].authorityAddress != address(0), "Authority not registered");
 
